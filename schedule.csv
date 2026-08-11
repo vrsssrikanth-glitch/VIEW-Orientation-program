@@ -1,0 +1,26 @@
+﻿Day,Room number,9:30 - 12:30,2:00 - 4:30
+Monday,A41,english,maths
+Monday,A42,computers,seminar
+Monday,A45,maths,english
+Monday,A46,seminar,general talk
+Monday,A47,general talk,computers
+Tuesday,A41,maths,english
+Tuesday,A42,seminar,computers
+Tuesday,A45,english,maths
+Tuesday,A46,general talk,seminar
+Tuesday,A47,computers,general talk
+Wednesday,A41,english,maths
+Wednesday,A42,computers,seminar
+Wednesday,A45,maths,english
+Wednesday,A46,seminar,general talk
+Wednesday,A47,general talk,computers
+Thursday,A41,maths,english
+Thursday,A42,seminar,computers
+Thursday,A45,english,maths
+Thursday,A46,general talk,seminar
+Thursday,A47,computers,general talk
+Friday,A41,english,maths
+Friday,A42,computers,seminar
+Friday,A45,maths,english
+Friday,A46,seminar,general talk
+Friday,A47,general talk,computers
