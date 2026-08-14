@@ -152,7 +152,7 @@ except FileNotFoundError:
 # Rooms are taken from the schedule file.
 # This automatically keeps the specified Batch order.
 
-rooms = ["A41", "A42", "A45", "A46", "A47", "B43", "B44", "B46"]
+batches = ["A", "1", "B", "2", "C", "3", "D", "4"]
 
 
 # ---------------------------------------------------------
@@ -168,27 +168,27 @@ def allocate_rooms(student_df, room_list):
     ).reset_index(drop=True)
 
     number_of_students = len(sorted_students)
-    number_of_rooms = len(room_list)
+    number_of_batches = len(batch_list)
 
     # Base number of students per Batch
-    base_size = number_of_students // number_of_rooms
+    base_size = number_of_students // number_of_batches
 
     # Remaining students
-    remainder = number_of_students % number_of_rooms
+    remainder = number_of_students % number_of_batches
 
     allocations = []
 
     start = 0
 
-    for i, Batch in enumerate(room_list):
+    for i, Batch in enumerate(batch_list):
 
         # First 'remainder' rooms receive one extra student
-        room_size = base_size + (1 if i < remainder else 0)
+        batch_size = base_size + (1 if i < remainder else 0)
 
-        end = start + room_size
+        end = start + batch_size
 
         allocations.extend(
-            [Batch] * room_size
+            [Batch] * batch_size
         )
 
         start = end
@@ -198,9 +198,9 @@ def allocate_rooms(student_df, room_list):
     return sorted_students
 
 
-students = allocate_rooms(
+students = allocate_batchs(
     students,
-    rooms
+    batches
 )
 
 
@@ -328,7 +328,7 @@ if search_name.strip():
 
     student_name = selected_student["Name"]
     branch = selected_student["Branch"]
-    allocated_room = selected_student["Allocated Batch"]
+    allocated_batch = selected_student["Allocated Batch"]
 
 
     # -----------------------------------------------------
@@ -371,7 +371,7 @@ if search_name.strip():
 
     room_schedule = schedule[
         schedule["Batch"].str.upper()
-        == str(allocated_room).upper()
+        == str(allocated_batch).upper()
     ].copy()
 
 
@@ -384,10 +384,10 @@ if search_name.strip():
         unsafe_allow_html=True
     )
 
-    if len(room_schedule) > 0:
+    if len(batcg_schedule) > 0:
 
         # Do not display Batch again
-        display_schedule = room_schedule[
+        display_schedule = batch_schedule[
             ["Day", "9:30 - 12:30", "2:00 - 4:30"]
         ].copy()
 
@@ -433,7 +433,8 @@ st.markdown(
     """
     <div class="footer">
         Vignan's Institute of Engineering for Women<br>
-        Orientation Program
+        Orientation Program - Department of BS&H<br>
+        Dr. Srikanth Vemuri
     </div>
     """,
     unsafe_allow_html=True
