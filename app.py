@@ -152,7 +152,7 @@ except FileNotFoundError:
 # Rooms are taken from the schedule file.
 # This automatically keeps the specified room order.
 
-rooms = ["A41", "A42", "A45", "A46", "A47"]
+rooms = ["A41", "A42", "A45", "A46", "A47", "B43", "B44", "B46"]
 
 
 # ---------------------------------------------------------
