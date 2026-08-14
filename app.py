@@ -281,10 +281,10 @@ def load_schedule():
     morning_col = find_column(
         df,
         [
-            "9:30 - 12:30",
-            "9:30-12:30",
-            "9.30 - 12.30",
-            "9.30-12.30"
+            "9:30 - 12:00",
+            "9:30-12:00",
+            "9.30 - 12.00",
+            "9.30-12.00"
         ]
     )
 
@@ -292,10 +292,10 @@ def load_schedule():
     afternoon_col = find_column(
         df,
         [
-            "2:00 - 4:30",
-            "2:00-4:30",
-            "2.00 - 4.30",
-            "2.00-4.30"
+            "1:30 - 4:20",
+            "1:30-4:20",
+            "1.30 - 4.20",
+            "1.30-4.20"
         ]
     )
 
@@ -308,10 +308,10 @@ def load_schedule():
         missing.append("Day")
 
     if morning_col is None:
-        missing.append("9:30 - 12:30")
+        missing.append("9:30 - 12:00")
 
     if afternoon_col is None:
-        missing.append("2:00 - 4:30")
+        missing.append("1:30 - 4:20")
 
     if missing:
 
@@ -332,8 +332,8 @@ def load_schedule():
         columns={
             batch_col: "Batch",
             day_col: "Day",
-            morning_col: "9:30 - 12:30",
-            afternoon_col: "2:00 - 4:30"
+            morning_col: "9:30 - 12:00",
+            afternoon_col: "1:30 - 4:20"
         }
     )
 
@@ -647,15 +647,15 @@ if search_name.strip():
         display_schedule = batch_schedule[
             [
                 "Day",
-                "9:30 - 12:30",
-                "2:00 - 4:30"
+                "9:30 - 12:00",
+                "1:30 - 4:20"
             ]
         ].copy()
 
         # Make schedule text cleaner
         for column in [
-            "9:30 - 12:30",
-            "2:00 - 4:30"
+            "9:30 - 12:00",
+            "1:30 - 4:20"
         ]:
 
             display_schedule[column] = (
