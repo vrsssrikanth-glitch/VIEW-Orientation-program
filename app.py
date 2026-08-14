@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 
 
-# =========================================================
+# ============================================================
 # PAGE CONFIGURATION
-# =========================================================
+# ============================================================
 
 st.set_page_config(
     page_title="Orientation Program | Vignan's Institute of Engineering for Women",
@@ -13,9 +13,9 @@ st.set_page_config(
 )
 
 
-# =========================================================
+# ============================================================
 # CUSTOM CSS
-# =========================================================
+# ============================================================
 
 st.markdown("""
 <style>
@@ -24,7 +24,7 @@ st.markdown("""
     text-align: center;
     font-size: 28px;
     font-weight: 700;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .program-title {
@@ -84,15 +84,27 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# =========================================================
-# FUNCTION TO NORMALIZE COLUMN NAMES
-# =========================================================
+# ============================================================
+# HELPER: CLEAN COLUMN NAMES
+# ============================================================
+
+def clean_column_name(column):
+
+    return (
+        str(column)
+        .replace("\ufeff", "")      # BOM
+        .replace("\u00A0", " ")     # Non-breaking space
+        .replace("\u2007", " ")     # Figure space
+        .replace("\u202F", " ")     # Narrow no-break space
+        .replace("\t", " ")         # Tab
+        .strip()
+    )
+
 
 def normalize_column_name(column):
 
     return (
-        str(column)
-        .strip()
+        clean_column_name(column)
         .lower()
         .replace(" ", "")
         .replace("_", "")
@@ -100,58 +112,63 @@ def normalize_column_name(column):
     )
 
 
-# =========================================================
+# ============================================================
 # LOAD STUDENT DATA
-# =========================================================
+# ============================================================
 
 @st.cache_data
 def load_student_data():
 
-    # Read CSV
     df = pd.read_csv("studentdata.csv")
 
     # Clean column names
-    df.columns = (
-        df.columns
-        .astype(str)
-        .str.replace("\ufeff", "", regex=False)
-        .str.strip()
-    )
+    df.columns = [
+        clean_column_name(column)
+        for column in df.columns
+    ]
 
-    # -----------------------------------------------------
-    # Find columns
-    # -----------------------------------------------------
+    # Map normalized names to original names
+    column_map = {
+        normalize_column_name(column): column
+        for column in df.columns
+    }
 
-    column_map = {}
+    # --------------------------------------------------------
+    # FIND STUDENT NAME
+    # --------------------------------------------------------
 
-    for column in df.columns:
-        column_map[normalize_column_name(column)] = column
+    name_column = None
 
-    name_col = None
-    branch_col = None
-    rank_col = None
-
-    # Student Name
     for key in [
         "studentname",
         "name",
         "student"
     ]:
         if key in column_map:
-            name_col = column_map[key]
+            name_column = column_map[key]
             break
 
-    # Branch
+    # --------------------------------------------------------
+    # FIND BRANCH
+    # --------------------------------------------------------
+
+    branch_column = None
+
     for key in [
         "branch",
         "branchname",
         "department"
     ]:
         if key in column_map:
-            branch_col = column_map[key]
+            branch_column = column_map[key]
             break
 
-    # Rank
+    # --------------------------------------------------------
+    # FIND RANK
+    # --------------------------------------------------------
+
+    rank_column = None
+
     for key in [
         "rank",
         "eapcetrank",
@@ -159,22 +176,22 @@ def load_student_data():
         "eamcetrank"
     ]:
         if key in column_map:
-            rank_col = column_map[key]
+            rank_column = column_map[key]
             break
 
-    # -----------------------------------------------------
-    # Check columns
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # CHECK REQUIRED COLUMNS
+    # --------------------------------------------------------
 
     missing = []
 
-    if name_col is None:
+    if name_column is None:
         missing.append("Student Name")
 
-    if branch_col is None:
+    if branch_column is None:
         missing.append("Branch")
 
-    if rank_col is None:
+    if rank_column is None:
         missing.append("Rank")
 
     if missing:
@@ -185,37 +202,39 @@ def load_student_data():
         )
 
         st.info(
-            "Columns detected in studentdata.csv: "
+            "Columns detected: "
             + ", ".join(df.columns.astype(str))
         )
 
         st.stop()
 
-    # -----------------------------------------------------
-    # Rename columns internally
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # STANDARDIZE INTERNAL COLUMN NAMES
+    # --------------------------------------------------------
 
     df = df.rename(
         columns={
-            name_col: "Student Name",
-            branch_col: "Branch",
-            rank_col: "Rank"
+            name_column: "Student Name",
+            branch_column: "Branch",
+            rank_column: "Rank"
         }
     )
 
-    # -----------------------------------------------------
-    # Clean values
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # CLEAN DATA
+    # --------------------------------------------------------
 
     df["Student Name"] = (
         df["Student Name"]
         .astype(str)
+        .str.replace("\u00A0", " ", regex=False)
         .str.strip()
     )
 
     df["Branch"] = (
         df["Branch"]
         .astype(str)
+        .str.replace("\u00A0", " ", regex=False)
         .str.strip()
     )
 
@@ -224,7 +243,7 @@ def load_student_data():
         errors="coerce"
     )
 
-    # Remove invalid rows
+    # Remove invalid records
     df = df.dropna(
         subset=[
             "Student Name",
@@ -232,7 +251,7 @@ def load_student_data():
         ]
     )
 
-    # Remove completely empty names
+    # Remove empty names
     df = df[
         df["Student Name"].str.strip() != ""
     ]
@@ -240,44 +259,42 @@ def load_student_data():
     return df
 
 
-# =========================================================
+# ============================================================
 # LOAD SCHEDULE DATA
-# =========================================================
+# ============================================================
 
 @st.cache_data
 def load_schedule_data():
 
     df = pd.read_csv("schedule.csv")
 
-    # Clean column names
-    df.columns = (
-        df.columns
-        .astype(str)
-        .str.replace("\ufeff", "", regex=False)
-        .str.strip()
-    )
+    # --------------------------------------------------------
+    # CLEAN ALL COLUMN NAMES
+    # --------------------------------------------------------
 
-    # -----------------------------------------------------
-    # Detect columns
-    # -----------------------------------------------------
+    df.columns = [
+        clean_column_name(column)
+        for column in df.columns
+    ]
 
-    column_map = {}
+    # Map normalized names
+    column_map = {
+        normalize_column_name(column): column
+        for column in df.columns
+    }
 
-    for column in df.columns:
-        column_map[normalize_column_name(column)] = column
+    # --------------------------------------------------------
+    # FIND DAY
+    # --------------------------------------------------------
 
-    day_col = None
-    batch_col = None
-    morning_col = None
-    afternoon_col = None
+    day_column = column_map.get("day")
 
-    # Day
-    for key in ["day"]:
-        if key in column_map:
-            day_col = column_map[key]
-            break
+    # --------------------------------------------------------
+    # FIND BATCH
+    # --------------------------------------------------------
 
-    # Batch
+    batch_column = None
+
     for key in [
         "batch",
         "batchname",
@@ -285,45 +302,57 @@ def load_schedule_data():
         "batchnumber"
     ]:
         if key in column_map:
-            batch_col = column_map[key]
+            batch_column = column_map[key]
             break
 
-    # Morning
+    # --------------------------------------------------------
+    # FIND MORNING SCHEDULE
+    # 9:30 - 12:00
+    # --------------------------------------------------------
+
+    morning_column = None
+
     for key in [
-        "9:30-12:00",
-        "930-1200",
-        "9301200"
+        "9:3012:00",
+        "9301200",
+        "9.3012.00"
     ]:
         if key in column_map:
-            morning_col = column_map[key]
+            morning_column = column_map[key]
             break
 
-    # Afternoon
+    # --------------------------------------------------------
+    # FIND AFTERNOON SCHEDULE
+    # 1:30 - 4:20
+    # --------------------------------------------------------
+
+    afternoon_column = None
+
     for key in [
-        "1:30-4:20",
-        "130-420",
-        "130420"
+        "1:304:20",
+        "130420",
+        "1.304.20"
     ]:
         if key in column_map:
-            afternoon_col = column_map[key]
+            afternoon_column = column_map[key]
             break
 
-    # -----------------------------------------------------
-    # Check columns
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # CHECK REQUIRED COLUMNS
+    # --------------------------------------------------------
 
     missing = []
 
-    if day_col is None:
+    if day_column is None:
         missing.append("Day")
 
-    if batch_col is None:
+    if batch_column is None:
         missing.append("Batch")
 
-    if morning_col is None:
+    if morning_column is None:
         missing.append("9:30 - 12:00")
 
-    if afternoon_col is None:
+    if afternoon_column is None:
         missing.append("1:30 - 4:20")
 
     if missing:
@@ -334,75 +363,75 @@ def load_schedule_data():
         )
 
         st.info(
-            "Columns detected in schedule.csv: "
+            "Columns detected: "
             + ", ".join(df.columns.astype(str))
         )
 
         st.stop()
 
-    # -----------------------------------------------------
-    # Rename internally
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # STANDARDIZE INTERNAL COLUMN NAMES
+    # --------------------------------------------------------
 
     df = df.rename(
         columns={
-            day_col: "Day",
-            batch_col: "Batch",
-            morning_col: "9:30 - 12:00",
-            afternoon_col: "1:30 - 4:20"
+            day_column: "Day",
+            batch_column: "Batch",
+            morning_column: "9:30 - 12:00",
+            afternoon_column: "1:30 - 4:20"
         }
     )
 
-    # -----------------------------------------------------
-    # Clean values
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # CLEAN VALUES
+    # --------------------------------------------------------
 
     for column in df.columns:
 
         df[column] = (
             df[column]
             .astype(str)
+            .str.replace("\u00A0", " ", regex=False)
             .str.strip()
         )
 
     return df
 
 
-# =========================================================
-# LOAD BOTH FILES
-# =========================================================
+# ============================================================
+# LOAD FILES
+# ============================================================
 
 try:
 
     students = load_student_data()
     schedule = load_schedule_data()
 
-except FileNotFoundError as error:
+except FileNotFoundError:
 
-    st.error(
-        "CSV file not found."
-    )
+    st.error("CSV file not found.")
 
     st.info(
-        "Make sure these files are in the same GitHub repository "
-        "and folder as app.py:"
+        "Please make sure these files are in the same folder "
+        "as app.py:"
     )
 
     st.code(
-        "studentdata.csv\nschedule.csv"
+        "app.py\n"
+        "studentdata.csv\n"
+        "schedule.csv"
     )
 
     st.stop()
 
 
-# =========================================================
+# ============================================================
 # BATCH ORDER
-# =========================================================
+# ============================================================
 
-# IMPORTANT:
-# Students are allocated in exactly this order.
+# Students will be distributed in this exact order.
 
-batches = [
+BATCHES = [
     "A",
     "1",
     "B",
@@ -414,16 +443,15 @@ batches = [
 ]
 
 
-# =========================================================
-# METHOD B
-# EQUAL DISTRIBUTION BASED ON RANK
-# =========================================================
+# ============================================================
+# EQUAL BATCH ALLOCATION
+# ============================================================
 
-def allocate_batches(student_data, batch_list):
+def allocate_batches(student_data):
 
-    # -----------------------------------------------------
+    # --------------------------------------------------------
     # Sort students by rank
-    # -----------------------------------------------------
+    # --------------------------------------------------------
 
     sorted_students = (
         student_data
@@ -436,41 +464,44 @@ def allocate_batches(student_data, batch_list):
 
     total_students = len(sorted_students)
 
-    total_batches = len(batch_list)
+    total_batches = len(BATCHES)
 
-    # -----------------------------------------------------
+    # --------------------------------------------------------
     # Calculate equal distribution
-    # -----------------------------------------------------
+    # --------------------------------------------------------
 
-    base_students = total_students // total_batches
+    students_per_batch = (
+        total_students // total_batches
+    )
 
-    extra_students = total_students % total_batches
+    extra_students = (
+        total_students % total_batches
+    )
 
     allocations = []
 
-    # -----------------------------------------------------
-    # Assign batches
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # Allocate batches
+    # --------------------------------------------------------
 
-    for i, batch in enumerate(batch_list):
+    for index, batch in enumerate(BATCHES):
 
-        # The first few batches get one extra student
-        number_for_this_batch = (
-            base_students
-            + (1 if i < extra_students else 0)
-        )
+        batch_size = students_per_batch
+
+        # Give one extra student to the first batches
+        if index < extra_students:
+            batch_size += 1
 
         allocations.extend(
-            [batch] * number_for_this_batch
+            [batch] * batch_size
         )
 
     # Safety check
     if len(allocations) != total_students:
 
         raise ValueError(
-            "Batch allocation error: "
-            "number of allocations does not match "
-            "number of students."
+            "Batch allocation count does not match "
+            "student count."
         )
 
     sorted_students["Allocated Batch"] = allocations
@@ -478,31 +509,29 @@ def allocate_batches(student_data, batch_list):
     return sorted_students
 
 
-# =========================================================
-# PERFORM BATCH ALLOCATION
-# =========================================================
+# ============================================================
+# PERFORM ALLOCATION
+# ============================================================
 
-students = allocate_batches(
-    students,
-    batches
-)
+students = allocate_batches(students)
 
 
-# =========================================================
-# SEARCH COLUMN
-# =========================================================
+# ============================================================
+# CREATE SEARCH FIELD
+# ============================================================
 
 students["Search Name"] = (
     students["Student Name"]
     .astype(str)
+    .str.replace("\u00A0", " ", regex=False)
     .str.strip()
     .str.lower()
 )
 
 
-# =========================================================
+# ============================================================
 # HEADER
-# =========================================================
+# ============================================================
 
 st.markdown(
     """
@@ -532,22 +561,22 @@ st.markdown(
 )
 
 
-# =========================================================
+# ============================================================
 # SEARCH BOX
-# =========================================================
+# ============================================================
 
 st.markdown("### 🔎 Search Student Name")
 
 search_name = st.text_input(
-    "Student Name",
-    placeholder="Enter your name...",
+    "Enter your name",
+    placeholder="Type your name here...",
     label_visibility="collapsed"
 )
 
 
-# =========================================================
-# SEARCH LOGIC
-# =========================================================
+# ============================================================
+# SEARCH PROCESS
+# ============================================================
 
 if search_name.strip():
 
@@ -557,9 +586,9 @@ if search_name.strip():
         .lower()
     )
 
-    # -----------------------------------------------------
+    # --------------------------------------------------------
     # EXACT MATCH
-    # -----------------------------------------------------
+    # --------------------------------------------------------
 
     exact_matches = students[
         students["Search Name"] == search_text
@@ -580,9 +609,9 @@ if search_name.strip():
 
     else:
 
-        # -------------------------------------------------
+        # ----------------------------------------------------
         # PARTIAL MATCH
-        # -------------------------------------------------
+        # ----------------------------------------------------
 
         matches = students[
             students["Search Name"].str.contains(
@@ -625,9 +654,9 @@ if search_name.strip():
             ].iloc[0]
 
 
-    # =====================================================
-    # STUDENT INFORMATION
-    # =====================================================
+    # ========================================================
+    # GET STUDENT INFORMATION
+    # ========================================================
 
     student_name = selected_student[
         "Student Name"
@@ -642,14 +671,12 @@ if search_name.strip():
     ]
 
 
-    # =====================================================
+    # ========================================================
     # DISPLAY STUDENT DETAILS
-    # =====================================================
+    # ========================================================
 
     st.markdown(
-        """
-        <div class="student-card">
-        """,
+        '<div class="student-card">',
         unsafe_allow_html=True
     )
 
@@ -681,14 +708,14 @@ if search_name.strip():
     )
 
     st.markdown(
-        "</div>",
+        '</div>',
         unsafe_allow_html=True
     )
 
 
-    # =====================================================
-    # FIND SCHEDULE FOR THE ALLOCATED BATCH
-    # =====================================================
+    # ========================================================
+    # FIND BATCH SCHEDULE
+    # ========================================================
 
     batch_schedule = schedule[
         schedule["Batch"]
@@ -701,9 +728,9 @@ if search_name.strip():
     ].copy()
 
 
-    # =====================================================
+    # ========================================================
     # DISPLAY SCHEDULE
-    # =====================================================
+    # ========================================================
 
     st.markdown(
         """
@@ -714,7 +741,7 @@ if search_name.strip():
         unsafe_allow_html=True
     )
 
-    if len(batch_schedule) > 0:
+    if not batch_schedule.empty:
 
         display_schedule = batch_schedule[
             [
@@ -738,9 +765,9 @@ if search_name.strip():
         )
 
 
-# =========================================================
+# ============================================================
 # INITIAL MESSAGE
-# =========================================================
+# ============================================================
 
 else:
 
@@ -750,16 +777,16 @@ else:
     )
 
 
-# =========================================================
+# ============================================================
 # FOOTER
-# =========================================================
+# ============================================================
 
 st.markdown(
     """
     <div class="footer">
         Vignan's Institute of Engineering for Women<br>
         Orientation Program - Department of BS&H<br>
-        Dr. Srikanth Vemuri
+        Dr. V. Srikanth
     </div>
     """,
     unsafe_allow_html=True
