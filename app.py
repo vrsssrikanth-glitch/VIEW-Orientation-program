@@ -51,7 +51,7 @@ st.markdown("""
     margin-bottom: 20px;
 }
 
-.room {
+.Batch {
     font-size: 30px;
     font-weight: 700;
     text-align: center;
@@ -146,11 +146,11 @@ except FileNotFoundError:
 
 
 # ---------------------------------------------------------
-# ROOM LIST
+# Batch LIST
 # ---------------------------------------------------------
 
 # Rooms are taken from the schedule file.
-# This automatically keeps the specified room order.
+# This automatically keeps the specified Batch order.
 
 rooms = ["A41", "A42", "A45", "A46", "A47", "B43", "B44", "B46"]
 
@@ -170,7 +170,7 @@ def allocate_rooms(student_df, room_list):
     number_of_students = len(sorted_students)
     number_of_rooms = len(room_list)
 
-    # Base number of students per room
+    # Base number of students per Batch
     base_size = number_of_students // number_of_rooms
 
     # Remaining students
@@ -180,7 +180,7 @@ def allocate_rooms(student_df, room_list):
 
     start = 0
 
-    for i, room in enumerate(room_list):
+    for i, Batch in enumerate(room_list):
 
         # First 'remainder' rooms receive one extra student
         room_size = base_size + (1 if i < remainder else 0)
@@ -188,12 +188,12 @@ def allocate_rooms(student_df, room_list):
         end = start + room_size
 
         allocations.extend(
-            [room] * room_size
+            [Batch] * room_size
         )
 
         start = end
 
-    sorted_students["Allocated Room"] = allocations
+    sorted_students["Allocated Batch"] = allocations
 
     return sorted_students
 
@@ -236,7 +236,7 @@ st.markdown(
 
 st.markdown(
     '<div class="subtitle">'
-    "Find your allocated room and Orientation Program schedule"
+    "Find your allocated Batch and Orientation Program schedule"
     "</div>",
     unsafe_allow_html=True
 )
@@ -328,7 +328,7 @@ if search_name.strip():
 
     student_name = selected_student["Name"]
     branch = selected_student["Branch"]
-    allocated_room = selected_student["Allocated Room"]
+    allocated_room = selected_student["Allocated Batch"]
 
 
     # -----------------------------------------------------
@@ -352,8 +352,8 @@ if search_name.strip():
 
     st.markdown(
         f"""
-        <div class="room">
-            🏫 Room: {allocated_room}
+        <div class="Batch">
+            🏫 Batch: {allocated_room}
         </div>
         """,
         unsafe_allow_html=True
@@ -366,11 +366,11 @@ if search_name.strip():
 
 
     # -----------------------------------------------------
-    # GET SCHEDULE FOR ALLOCATED ROOM
+    # GET SCHEDULE FOR ALLOCATED Batch
     # -----------------------------------------------------
 
     room_schedule = schedule[
-        schedule["Room number"].str.upper()
+        schedule["Batch number"].str.upper()
         == str(allocated_room).upper()
     ].copy()
 
@@ -386,7 +386,7 @@ if search_name.strip():
 
     if len(room_schedule) > 0:
 
-        # Do not display room number again
+        # Do not display Batch number again
         display_schedule = room_schedule[
             ["Day", "9:30 - 12:30", "2:00 - 4:30"]
         ].copy()
@@ -409,7 +409,7 @@ if search_name.strip():
     else:
 
         st.warning(
-            "Schedule information for your room is not available."
+            "Schedule information for your Batch is not available."
         )
 
 
@@ -421,7 +421,7 @@ else:
 
     st.info(
         "👆 Enter your name in the search box above "
-        "to find your allocated room and schedule."
+        "to find your allocated Batch and schedule."
     )
 
 
