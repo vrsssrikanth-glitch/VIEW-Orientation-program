@@ -370,7 +370,7 @@ if search_name.strip():
     # -----------------------------------------------------
 
     room_schedule = schedule[
-        schedule["Batch number"].str.upper()
+        schedule["Batch"].str.upper()
         == str(allocated_room).upper()
     ].copy()
 
@@ -386,7 +386,7 @@ if search_name.strip():
 
     if len(room_schedule) > 0:
 
-        # Do not display Batch number again
+        # Do not display Batch again
         display_schedule = room_schedule[
             ["Day", "9:30 - 12:30", "2:00 - 4:30"]
         ].copy()
